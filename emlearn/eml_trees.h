@@ -90,6 +90,25 @@ eml_trees_predict_tree(const EmlTrees *forest, int32_t tree_root,
     return leaf;
 }
 
+EmlError
+eml_trees_predict_leaf_indices(const EmlTrees *self,
+                               const float *features, int8_t features_length,
+                               int32_t *leaf_indices, int32_t out_length)
+{
+    EML_PRECONDITION(features, EmlUninitialized);
+    EML_PRECONDITION(leaf_indices, EmlUninitialized);
+    const int32_t n_outputs = self->n_trees;
+    EML_PRECONDITION(out_length == n_outputs, EmlSizeMismatch);
+
+    for (int32_t i = 0; i < self->n_trees; i++) {
+        int32_t leaf_number = eml_trees_predict_tree(self, self->tree_roots[i], features, features_length);
+        leaf_indices[i] = leaf_number;
+    }
+
+    return EmlOk;
+}
+
+
 
 static inline int32_t
 eml_trees_outputs_proba(const EmlTrees *self)

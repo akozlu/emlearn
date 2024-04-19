@@ -533,7 +533,8 @@ class Wrapper:
         method = self.method
         if method == 'loadable':
             name = 'mytree'
-            proba_func = 'eml_trees_predict_proba(&{}, values, length, outputs, N_CLASSES)'\
+            # Update the proba_func call to the new function name and expect leaf indices
+            proba_func = 'eml_trees_predict_leaf_indices(&{}, values, length, outputs, N_CLASSES)' \
                 .format(name, self.n_classes)
 
             if self.is_classifier:
@@ -541,20 +542,21 @@ class Wrapper:
             else:
                 func = 'eml_trees_regress1(&{}, values, length)'.format(name)
             code = self.save(name=name)
+            # Assume outputs are now leaf indices, handle accordingly
             self.classifier_ = common.CompiledClassifier(code, name=name,
-                call=func, proba_call=proba_func, out_dtype=self.out_dtype, n_classes=self.n_classes)
+                                                         call=func, proba_call=proba_func, out_dtype=np.int32,
+                                                         n_classes=self.n_classes)  # Update dtype if necessary
         elif method == 'inline':
             name = 'myinlinetree'
-            # TODO: actually implement inline predict_proba, instead of just using loadable
-            proba_func = 'eml_trees_predict_proba(&{}, values, length, outputs, N_CLASSES)'\
+            proba_func = 'eml_trees_predict_leaf_indices(&{}, values, length, outputs, N_CLASSES)' \
                 .format(name, self.n_classes)
             func = '{}_predict(values, length)'.format(name)
             code = self.save(name=name)
             self.classifier_ = common.CompiledClassifier(code, name=name,
-                call=func, proba_call=proba_func, out_dtype=self.out_dtype, n_classes=self.n_classes)
+                                                         call=func, proba_call=proba_func, out_dtype=np.int32,
+                                                         n_classes=self.n_classes)  # Update dtype if necessary
         else:
             assert False, 'should not happen, constructor should enforce'
-
 
     def predict(self, X):
         self._build_classifier()
